@@ -44,7 +44,6 @@ private:
 	GfxPixelShader m_ps;
 	GfxVertexFormat m_vf;
 	GfxTechnique m_technique;
-	GfxTexture m_defaultWhiteTexture;
 
 	GfxBuffer m_vertexBuffer;
 	GfxBuffer m_indexBuffer;

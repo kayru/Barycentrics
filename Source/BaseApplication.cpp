@@ -99,6 +99,14 @@ BaseApplication::BaseApplication()
 		desc.anisotropy     = 4.0f;
 		m_samplerStates.anisotropicWrap.takeover(Gfx_CreateSamplerState(desc));
 	}
+
+	// Resources
+
+	{
+		const u32 whiteTexturePixels[4] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+		GfxTextureDesc textureDescr = GfxTextureDesc::make2D(2, 2);
+		m_defaultWhiteTexture = Gfx_CreateTexture(textureDescr, whiteTexturePixels);
+	}
 }
 
 BaseApplication::~BaseApplication()
@@ -106,6 +114,7 @@ BaseApplication::~BaseApplication()
 	delete m_font;
 	delete m_prim;
 
+	Gfx_Release(m_defaultWhiteTexture);
 	Gfx_Release(m_ctx);
 	Gfx_Release(m_dev);
 	m_window->release();

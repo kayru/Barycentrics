@@ -49,4 +49,6 @@ protected:
 	Window*             m_window;
 	PrimitiveBatch*     m_prim;
 	BitmapFontRenderer* m_font;
+
+	GfxTexture m_defaultWhiteTexture;
 };
