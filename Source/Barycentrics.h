@@ -12,6 +12,7 @@
 #include <Rush/Window.h>
 
 #include "BaseApplication.h"
+#include "DemoUtils.h"
 
 #include <stdio.h>
 #include <memory>
@@ -105,5 +106,22 @@ private:
 	float m_cameraScale = 1.0f;
 
 	Timer m_timer;
+
+
+	enum Timestamp
+	{
+		Timestamp_World,
+		Timestamp_UI,
+	};
+
+	struct Stats
+	{
+		MovingAverage<double, 60> gpuTotal;
+		MovingAverage<double, 60> gpuWorld;
+		MovingAverage<double, 60> gpuUI;
+		MovingAverage<double, 60> cpuTotal;
+		MovingAverage<double, 60> cpuWorld;
+		MovingAverage<double, 60> cpuUI;
+	} m_stats;
 };
 

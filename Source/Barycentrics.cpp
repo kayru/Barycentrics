@@ -34,6 +34,7 @@ int main(int argc, char** argv)
 
 #ifndef NDEBUG
 	cfg.debug = true;
+	Log::breakOnError = true;
 #endif
 
 	return Platform_Main<BarycentricsApp>(cfg);
@@ -144,6 +145,12 @@ BarycentricsApp::~BarycentricsApp()
 
 void BarycentricsApp::update()
 {
+	TimingScope<double, 60> timingScope(m_stats.cpuTotal);
+
+	m_stats.gpuWorld.add(Gfx_Stats().customTimer[Timestamp_World]);
+	m_stats.gpuUI.add(Gfx_Stats().customTimer[Timestamp_UI]);
+	m_stats.gpuTotal.add(Gfx_Stats().lastFrameGpuTime);
+
 	Gfx_ResetStats();
 
 	const float dt = (float)m_timer.time();
@@ -212,10 +219,14 @@ void BarycentricsApp::render()
 
 	if (m_valid)
 	{
+		TimingScope<double, 60> timingScope(m_stats.cpuWorld);
+		GfxTimerScope gpuTimerScopeWorld(m_ctx, Timestamp_World);
+
 		Gfx_SetBlendState(m_ctx, m_blendStates.opaque);
 
 		Gfx_SetTechnique(m_ctx, m_technique);
 		Gfx_SetConstantBuffer(m_ctx, 0, m_constantBuffer);
+
 		Gfx_SetStorageBuffer(m_ctx, 0, m_vertexBuffer);
 		Gfx_SetStorageBuffer(m_ctx, 1, m_indexBuffer);
 
@@ -234,6 +245,44 @@ void BarycentricsApp::render()
 
 			Gfx_Draw(m_ctx, segment.indexOffset, segment.indexCount);
 		}
+	}
+
+	// Draw UI on top
+	{
+		GfxTimerScope gpuTimerScopeWorld(m_ctx, Timestamp_UI);
+		TimingScope<double, 60> timingScope(m_stats.cpuUI);
+
+		Gfx_SetBlendState(m_ctx, m_blendStates.lerp);
+		Gfx_SetDepthStencilState(m_ctx, m_depthStencilStates.disable);
+
+		m_prim->begin2D(m_window->getSize());
+
+		m_font->setScale(2.0f);
+		m_font->draw(m_prim, Vec2(10.0f), m_statusString.c_str());
+
+		m_font->setScale(2.0f);
+		char timingString[1024];
+		const GfxStats& stats = Gfx_Stats();
+		sprintf_s(timingString,
+			"Draw calls: %d\n"
+			"Vertices: %d\n"
+			"GPU total: %.2f ms\n"
+			"> World: %.2f\n"
+			"> UI: %.2f\n"
+			"CPU time: %.2f ms\n"
+			"> World: %.2f ms\n"
+			"> UI: %.2f ms",
+			stats.drawCalls,
+			stats.vertices,
+			m_stats.gpuTotal.get() * 1000.0f,
+			m_stats.gpuWorld.get() * 1000.0f,
+			m_stats.gpuUI.get() * 1000.0f,
+			m_stats.cpuTotal.get() * 1000.0f,
+			m_stats.cpuWorld.get() * 1000.0f,
+			m_stats.cpuUI.get() * 1000.0f);
+		m_font->draw(m_prim, Vec2(10.0f, 30.0f), timingString);
+
+		m_prim->end2D();
 	}
 
 	Gfx_EndPass(m_ctx);

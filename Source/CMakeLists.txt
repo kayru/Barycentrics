@@ -14,6 +14,8 @@ set(src
 	BaseApplication.h
 	Barycentrics.cpp
 	Barycentrics.h
+	DemoUtils.cpp
+	DemoUtils.h
 )
 
 set(app Barycentrics)

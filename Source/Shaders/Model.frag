@@ -17,8 +17,6 @@ void main()
 	Vertex vertex1 = getVertex(index1);
 	Vertex vertex2 = getVertex(index2);
 
-	fragColor0.rgb = vec3(v_barycentrics, 1.0 - v_barycentrics.x - v_barycentrics.y);
-
 	float b0 = v_barycentrics.x;
 	float b1 = v_barycentrics.y;
 	float b2 = 1.0 - b0 - b1;
