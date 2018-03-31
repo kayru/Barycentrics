@@ -40,14 +40,13 @@ private:
 
 	CameraManipulator* m_cameraMan;
 
-	GfxVertexShader m_vs;
-	GfxPixelShader m_ps;
-	GfxVertexFormat m_vf;
 	GfxTechnique m_technique;
+	GfxTechnique m_techniqueIndexed;
 
 	GfxBuffer m_vertexBuffer;
 	GfxBuffer m_indexBuffer;
 	GfxBuffer m_constantBuffer;
+
 	u32 m_indexCount = 0;
 	u32 m_vertexCount = 0;
 
@@ -64,7 +63,7 @@ private:
 
 	Box3 m_boundingBox;
 
-	struct Vertex
+	struct Vertex // TODO: make a packed version of this for GPU
 	{
 		Vec3 position;
 		Vec3 normal;
@@ -122,5 +121,11 @@ private:
 		MovingAverage<double, 60> cpuWorld;
 		MovingAverage<double, 60> cpuUI;
 	} m_stats;
+
+	enum class Mode
+	{
+		Barycentrics,
+		Indexed,
+	} m_mode = Mode::Barycentrics;
 };
 

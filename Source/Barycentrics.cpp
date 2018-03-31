@@ -42,19 +42,44 @@ BarycentricsApp::BarycentricsApp()
 
 	m_windowEvents.setOwner(m_window);
 
-	m_vs = Gfx_CreateVertexShader(shaderFromFile("Shaders/Model.vert.spv"));
-	m_ps = Gfx_CreatePixelShader(shaderFromFile("Shaders/Model.frag.spv"));
-
-	GfxVertexFormatDesc vfDescr;
-	m_vf = Gfx_CreateVertexFormat(vfDescr);
-
 	GfxShaderBindings bindings;
 	bindings.addConstantBuffer("constantBuffer0", 0); // scene consants
 	bindings.addConstantBuffer("constantBuffer1", 1); // material constants
 	bindings.addCombinedSampler("sampler0", 2); // albedo texture sampler
 	bindings.addStorageBuffer("vertexBuffer", 3);
 	bindings.addStorageBuffer("indexBuffer", 4);
-	m_technique = Gfx_CreateTechnique(GfxTechniqueDesc(m_ps, m_vs, m_vf, &bindings));
+
+	{
+		GfxVertexShaderRef vs;
+		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/Model.vert.spv")));
+
+		GfxPixelShaderRef ps;
+		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/Model.frag.spv")));
+
+		GfxVertexFormatDesc vfDescr;
+		GfxVertexFormatRef vf;
+		vf.takeover(Gfx_CreateVertexFormat(vfDescr));
+
+		m_technique = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+	}
+
+	{
+		GfxVertexShaderRef vs;
+		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
+
+		GfxPixelShaderRef ps;
+		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelIndexed.frag.spv")));
+
+		GfxVertexFormatDesc vfDescr; // TODO: use de-interleaved vertex streams and packed vertices
+		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Position, 0);
+		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Normal, 0);
+		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float2, GfxVertexFormatDesc::Semantic::Texcoord, 0);
+
+		GfxVertexFormatRef vf;
+		vf.takeover(Gfx_CreateVertexFormat(vfDescr));
+
+		m_techniqueIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+	}
 
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
 	m_constantBuffer = Gfx_CreateBuffer(cbDescr);
@@ -101,9 +126,6 @@ BarycentricsApp::~BarycentricsApp()
 	Gfx_Release(m_vertexBuffer);
 	Gfx_Release(m_indexBuffer);
 	Gfx_Release(m_constantBuffer);
-	Gfx_Release(m_vs);
-	Gfx_Release(m_ps);
-	Gfx_Release(m_vf);
 }
 
 void BarycentricsApp::update()
@@ -134,6 +156,18 @@ void BarycentricsApp::update()
 			}
 			Log::message("Camera scale: %f", m_cameraScale);
 			break;
+		case WindowEventType_KeyDown:
+		{
+			if (e.code == Key_1)
+			{
+				m_mode = Mode::Barycentrics;
+			}
+			else if (e.code == Key_2)
+			{
+				m_mode = Mode::Indexed;
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -150,6 +184,7 @@ void BarycentricsApp::update()
 	m_interpolatedCamera.blendTo(m_camera, 0.1f, 0.125f);
 
 	m_windowEvents.clear();
+
 	render();
 }
 
@@ -186,7 +221,17 @@ void BarycentricsApp::render()
 
 		Gfx_SetBlendState(m_ctx, m_blendStates.opaque);
 
-		Gfx_SetTechnique(m_ctx, m_technique);
+		if (m_mode == Mode::Barycentrics)
+		{
+			Gfx_SetTechnique(m_ctx, m_technique);
+		}
+		else
+		{
+			Gfx_SetTechnique(m_ctx, m_techniqueIndexed);
+			Gfx_SetVertexStream(m_ctx, 0, m_vertexBuffer);
+			Gfx_SetIndexStream(m_ctx, m_indexBuffer);
+		}
+
 		Gfx_SetConstantBuffer(m_ctx, 0, m_constantBuffer);
 
 		Gfx_SetStorageBuffer(m_ctx, 0, m_vertexBuffer);
@@ -205,7 +250,14 @@ void BarycentricsApp::render()
 
 			Gfx_SetTexture(m_ctx, GfxStage::Pixel, 0, texture, m_samplerStates.anisotropicWrap);
 
-			Gfx_Draw(m_ctx, segment.indexOffset, segment.indexCount);
+			if (m_mode == Mode::Barycentrics)
+			{
+				Gfx_Draw(m_ctx, segment.indexOffset, segment.indexCount);
+			}
+			else
+			{
+				Gfx_DrawIndexed(m_ctx, segment.indexCount, segment.indexOffset, 0, m_vertexCount);
+			}
 		}
 	}
 
