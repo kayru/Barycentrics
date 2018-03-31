@@ -2,12 +2,8 @@
 
 #include "Common.glsl"
 
-layout (location = 0) in vec2 v_tex0;
-layout (location = 1) in vec3 v_nor0;
-layout (location = 2) in vec3 v_worldPos;
-layout (location = 3) in vec3 v_viewVector;
-layout (location = 4) in vec2 v_barycentrics;
-layout (location = 5) in flat uint v_primId;
+layout (location = 0) in vec2 v_barycentrics;
+layout (location = 1) in flat uint v_primId;
 
 layout (location = 0) out vec4 fragColor0;
 

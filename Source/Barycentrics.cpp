@@ -330,8 +330,6 @@ inline u64 hashFnv1a64(const void* message, size_t length, u64 state = 0xcbf29ce
 	return state;
 }
 
-
-#pragma optimize("", off)
 bool BarycentricsApp::loadModel(const char* filename)
 {
 	Log::message("Loading model '%s'", filename);
