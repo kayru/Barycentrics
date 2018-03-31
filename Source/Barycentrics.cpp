@@ -51,14 +51,14 @@ BarycentricsApp::BarycentricsApp()
 	GfxShaderBindings bindings;
 	bindings.addConstantBuffer("constantBuffer0", 0); // scene consants
 	bindings.addConstantBuffer("constantBuffer1", 1); // material constants
-	bindings.addSampler("sampler0", 2); // albedo texture sampler
+	bindings.addCombinedSampler("sampler0", 2); // albedo texture sampler
 	bindings.addStorageBuffer("vertexBuffer", 3);
 	bindings.addStorageBuffer("indexBuffer", 4);
 	m_technique = Gfx_CreateTechnique(GfxTechniqueDesc(m_ps, m_vs, m_vf, &bindings));
 
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
 	m_constantBuffer = Gfx_CreateBuffer(cbDescr);
-;
+
 	if (g_appConfig.argc >= 2)
 	{
 		const char* modelFilename = g_appConfig.argv[1];
