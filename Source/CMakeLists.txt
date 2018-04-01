@@ -8,6 +8,7 @@ set(shaders
 	Shaders/Model.frag
 	Shaders/ModelIndexed.vert
 	Shaders/ModelIndexed.frag
+	Shaders/ModelBarycentrics.geom
 )
 
 set(src

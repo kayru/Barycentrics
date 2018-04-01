@@ -60,7 +60,31 @@ BarycentricsApp::BarycentricsApp()
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDescr));
 
-		m_technique = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+		m_techniqueNonIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+	}
+
+	{
+		GfxVertexShaderRef vs;
+		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
+
+		GfxPixelShaderRef ps;
+		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/Model.frag.spv")));
+
+		GfxGeometryShaderRef gs;
+		gs.takeover(Gfx_CreateGeometryShader(shaderFromFile("Shaders/ModelBarycentrics.geom.spv")));
+
+		GfxVertexFormatDesc vfDescr; // TODO: use de-interleaved vertex streams and packed vertices
+		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Position, 0);
+		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Normal, 0);
+		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float2, GfxVertexFormatDesc::Semantic::Texcoord, 0);
+
+		GfxVertexFormatRef vf;
+		vf.takeover(Gfx_CreateVertexFormat(vfDescr));
+
+		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+		techniqueDesc.gs = gs.get();
+
+		m_techniqueGeometryShader = Gfx_CreateTechnique(techniqueDesc);
 	}
 
 	{
@@ -160,11 +184,15 @@ void BarycentricsApp::update()
 		{
 			if (e.code == Key_1)
 			{
-				m_mode = Mode::Barycentrics;
+				m_mode = Mode::Indexed;
 			}
 			else if (e.code == Key_2)
 			{
-				m_mode = Mode::Indexed;
+				m_mode = Mode::NonIndexed;
+			}
+			else if (e.code == Key_3)
+			{
+				m_mode = Mode::GeometryShader;
 			}
 			break;
 		}
@@ -221,13 +249,21 @@ void BarycentricsApp::render()
 
 		Gfx_SetBlendState(m_ctx, m_blendStates.opaque);
 
-		if (m_mode == Mode::Barycentrics)
+		switch (m_mode)
 		{
-			Gfx_SetTechnique(m_ctx, m_technique);
-		}
-		else
-		{
+		case Mode::Indexed:
 			Gfx_SetTechnique(m_ctx, m_techniqueIndexed);
+			break;
+		case Mode::NonIndexed:
+			Gfx_SetTechnique(m_ctx, m_techniqueNonIndexed);
+			break;
+		case Mode::GeometryShader:
+			Gfx_SetTechnique(m_ctx, m_techniqueGeometryShader);
+			break;
+		}
+
+		if (m_mode != Mode::NonIndexed)
+		{
 			Gfx_SetVertexStream(m_ctx, 0, m_vertexBuffer);
 			Gfx_SetIndexStream(m_ctx, m_indexBuffer);
 		}
@@ -246,11 +282,12 @@ void BarycentricsApp::render()
 			{
 				texture = material.albedoTexture.get();
 			}
+
 			Gfx_SetConstantBuffer(m_ctx, 1, material.constantBuffer);
 
 			Gfx_SetTexture(m_ctx, GfxStage::Pixel, 0, texture, m_samplerStates.anisotropicWrap);
 
-			if (m_mode == Mode::Barycentrics)
+			if (m_mode == Mode::NonIndexed)
 			{
 				Gfx_Draw(m_ctx, segment.indexOffset, segment.indexCount);
 			}
@@ -272,12 +309,22 @@ void BarycentricsApp::render()
 		m_prim->begin2D(m_window->getSize());
 
 		m_font->setScale(2.0f);
-		m_font->draw(m_prim, Vec2(10.0f), m_statusString.c_str());
 
-		m_font->setScale(2.0f);
-		char timingString[1024];
+		Vec2 textOrigin = Vec2(10.0f);
+		Vec2 pos = textOrigin;
+		pos = m_font->draw(m_prim, pos, m_statusString.c_str());
+		pos = m_font->draw(m_prim, pos, "\n");
+		pos.x = textOrigin.x;
+
+		char tempString[1024];
+
+		pos = m_font->draw(m_prim, pos, "Mode: ");
+		pos = m_font->draw(m_prim, pos, toString(m_mode), ColorRGBA8(255, 255, 64));
+		pos = m_font->draw(m_prim, pos, "\n");
+		pos.x = textOrigin.x;
+		
 		const GfxStats& stats = Gfx_Stats();
-		sprintf_s(timingString,
+		sprintf_s(tempString,
 			"Draw calls: %d\n"
 			"Vertices: %d\n"
 			"GPU total: %.2f ms\n"
@@ -294,7 +341,8 @@ void BarycentricsApp::render()
 			m_stats.cpuTotal.get() * 1000.0f,
 			m_stats.cpuWorld.get() * 1000.0f,
 			m_stats.cpuUI.get() * 1000.0f);
-		m_font->draw(m_prim, Vec2(10.0f, 30.0f), timingString);
+		pos = m_font->draw(m_prim, pos, tempString);
+		pos.x = textOrigin.x;
 
 		m_prim->end2D();
 	}

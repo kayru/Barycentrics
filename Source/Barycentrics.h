@@ -40,7 +40,8 @@ private:
 
 	CameraManipulator* m_cameraMan;
 
-	GfxTechnique m_technique;
+	GfxTechnique m_techniqueNonIndexed;
+	GfxTechnique m_techniqueGeometryShader;
 	GfxTechnique m_techniqueIndexed;
 
 	GfxBuffer m_vertexBuffer;
@@ -124,8 +125,20 @@ private:
 
 	enum class Mode
 	{
-		Barycentrics,
 		Indexed,
-	} m_mode = Mode::Barycentrics;
+		NonIndexed,
+		GeometryShader,
+	} m_mode = Mode::NonIndexed;
+
+	const char* toString(Mode m)
+	{
+		switch (m)
+		{
+		default: return "Unknown";
+		case Mode::Indexed: return "Indexed";
+		case Mode::NonIndexed: return "NonIndexed";
+		case Mode::GeometryShader: return "GeometryShader";
+		}
+	}
 };
 
