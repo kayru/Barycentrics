@@ -114,6 +114,26 @@ BarycentricsApp::BarycentricsApp()
 		m_techniqueManual = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
 	}
 
+	if (Gfx_GetCapability().geometryShaderPassthroughNV)
+	{
+		GfxVertexShaderRef vs;
+		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelPassthrough.vert.spv")));
+
+		GfxPixelShaderRef ps;
+		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelPassthrough.frag.spv")));
+
+		GfxGeometryShaderRef gs;
+		gs.takeover(Gfx_CreateGeometryShader(shaderFromFile("Shaders/ModelPassthrough.geom.spv")));
+
+		GfxVertexFormatRef vf;
+		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
+
+		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+		techniqueDesc.gs = gs.get();
+
+		m_techniquePassthroughGS = Gfx_CreateTechnique(techniqueDesc);
+	}
+
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
 	m_constantBuffer = Gfx_CreateBuffer(cbDescr);
 
@@ -207,6 +227,10 @@ void BarycentricsApp::update()
 			{
 				m_mode = Mode::Manual;
 			}
+			else if (e.code == Key_5 && m_techniquePassthroughGS.valid())
+			{
+				m_mode = Mode::PassthroughGS;
+			}
 			break;
 		}
 		default:
@@ -275,6 +299,9 @@ void BarycentricsApp::render()
 			break;
 		case Mode::Manual:
 			Gfx_SetTechnique(m_ctx, m_techniqueManual);
+			break;
+		case Mode::PassthroughGS:
+			Gfx_SetTechnique(m_ctx, m_techniquePassthroughGS);
 			break;
 		default:
 			RUSH_LOG_ERROR("Rendering mode '%s' not implemented", toString(m_mode));

@@ -44,6 +44,7 @@ private:
 	GfxTechnique m_techniqueGeometryShader;
 	GfxTechnique m_techniqueIndexed;
 	GfxTechnique m_techniqueManual;
+	GfxTechnique m_techniquePassthroughGS;
 
 	GfxBuffer m_vertexBuffer;
 	GfxBuffer m_indexBuffer;
@@ -130,6 +131,7 @@ private:
 		NonIndexed,
 		GeometryShader,
 		Manual,
+		PassthroughGS,
 	} m_mode = Mode::NonIndexed;
 
 	const char* toString(Mode m)
@@ -141,6 +143,7 @@ private:
 		case Mode::NonIndexed: return "NonIndexed";
 		case Mode::GeometryShader: return "GeometryShader";
 		case Mode::Manual: return "Manual";
+		case Mode::PassthroughGS: return "PassthroughGS";
 		}
 	}
 };

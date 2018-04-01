@@ -49,3 +49,18 @@ Vertex getVertex(uint i)
 
 	return r;
 }
+
+vec3 intersectRayTri(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v2)
+{
+	vec3 e0 = v1 - v0;
+	vec3 e1 = v2 - v0;
+	vec3 s1 = cross(rayDirection, e1);
+	float  invd = 1.0 / (dot(s1, e0));
+	vec3 d = rayOrigin - v0;
+	float  b1 = dot(d, s1) * invd;
+	vec3 s2 = cross(d, e0);
+	float  b2 = dot(rayDirection, s2) * invd;
+	float temp = dot(e1, s2) * invd;
+
+	return vec3(1.0 - b1 - b2, b1, b2);
+}
