@@ -211,23 +211,23 @@ void BarycentricsApp::update()
 			break;
 		case WindowEventType_KeyDown:
 		{
-			if (e.code == Key_1)
+			if (e.code == Key_0)
 			{
 				m_mode = Mode::Indexed;
 			}
-			else if (e.code == Key_2)
+			else if (e.code == Key_1)
 			{
 				m_mode = Mode::NonIndexed;
 			}
-			else if (e.code == Key_3)
+			else if (e.code == Key_2)
 			{
 				m_mode = Mode::GeometryShader;
 			}
-			else if (e.code == Key_4)
+			else if (e.code == Key_3)
 			{
 				m_mode = Mode::Manual;
 			}
-			else if (e.code == Key_5 && m_techniquePassthroughGS.valid())
+			else if (e.code == Key_4 && m_techniquePassthroughGS.valid())
 			{
 				m_mode = Mode::PassthroughGS;
 			}
