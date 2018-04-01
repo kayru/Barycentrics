@@ -56,6 +56,9 @@ BarycentricsApp::BarycentricsApp()
 
 	GfxVertexFormatDesc vfEmptyDesc;
 
+	GfxVertexShaderRef vsIndexed;
+	vsIndexed.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
+
 	{
 		GfxVertexShaderRef vs;
 		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/Model.vert.spv")));
@@ -70,9 +73,6 @@ BarycentricsApp::BarycentricsApp()
 	}
 
 	{
-		GfxVertexShaderRef vs;
-		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
-
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/Model.frag.spv")));
 
@@ -82,36 +82,30 @@ BarycentricsApp::BarycentricsApp()
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+		GfxTechniqueDesc techniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings);
 		techniqueDesc.gs = gs.get();
 
 		m_techniqueGeometryShader = Gfx_CreateTechnique(techniqueDesc);
 	}
 
 	{
-		GfxVertexShaderRef vs;
-		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
-
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelIndexed.frag.spv")));
 
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		m_techniqueIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+		m_techniqueIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings));
 	}
 
 	{
-		GfxVertexShaderRef vs;
-		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
-
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelManual.frag.spv")));
 
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		m_techniqueManual = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+		m_techniqueManual = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings));
 	}
 
 	if (Gfx_GetCapability().geometryShaderPassthroughNV)
@@ -132,6 +126,20 @@ BarycentricsApp::BarycentricsApp()
 		techniqueDesc.gs = gs.get();
 
 		m_techniquePassthroughGS = Gfx_CreateTechnique(techniqueDesc);
+	}
+
+	if (Gfx_GetCapability().explicitVertexParameterAMD)
+	{
+		GfxVertexShaderRef vs;
+		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelNativeAMD.vert.spv")));
+
+		GfxPixelShaderRef ps;
+		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelNativeAMD.frag.spv")));
+
+		GfxVertexFormatRef vf;
+		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
+
+		m_techniqueNativeAMD = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
 	}
 
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
@@ -231,6 +239,10 @@ void BarycentricsApp::update()
 			{
 				m_mode = Mode::PassthroughGS;
 			}
+			else if (e.code == Key_5 && m_techniqueNativeAMD.valid())
+			{
+				m_mode = Mode::NativeAMD;
+			}
 			break;
 		}
 		default:
@@ -302,6 +314,9 @@ void BarycentricsApp::render()
 			break;
 		case Mode::PassthroughGS:
 			Gfx_SetTechnique(m_ctx, m_techniquePassthroughGS);
+			break;
+		case Mode::NativeAMD:
+			Gfx_SetTechnique(m_ctx, m_techniqueNativeAMD);
 			break;
 		default:
 			RUSH_LOG_ERROR("Rendering mode '%s' not implemented", toString(m_mode));

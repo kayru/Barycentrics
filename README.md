@@ -30,6 +30,10 @@ This mode uses `VK_NV_geometry_shader_passthrough` extension. Fast / passthrough
 
 Performance is slightly better than mode 3, averaging ~15% slowdown compared to "speed-of-light". With no geometry in view, performance matches the baseline (no primitive ID overhead, unlike mode 3).
 
-## Mode 5: Native barycentrics (AMD) [TODO]
+## Mode 5: Native barycentrics (AMD)
 
 This mode uses `VK_AMD_shader_explicit_vertex_parameter` extension. This approach is described in [GPUOpen blog post](https://gpuopen.com/stable-barycentric-coordinates).
+
+Vertex shader writes gl_VertexIndex into 2 separate outputs. Pixel shader accesses those parameters through `flat` and `__explicitInterpAMD` interpolators to establish the order of native barycentrics available through `gl_BaryCoordSmoothAMD`.
+
+Performance matches the "speed-of-light". There is no measurable overhead from accessing barycentrics with this method.
