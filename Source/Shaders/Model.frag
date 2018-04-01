@@ -4,11 +4,16 @@
 
 layout (location = 0) in vec2 v_barycentrics;
 layout (location = 1) in flat uint v_primId;
+layout (location = 2) in vec3 v_viewVector;
 
 layout (location = 0) out vec4 fragColor0;
 
 void main()
 {
+	fragColor0.rgb = vec3(v_barycentrics.x, v_barycentrics.y, 1.0 - v_barycentrics.x - v_barycentrics.y);
+	fragColor0.a = 1.0;
+
+	/*
 	uint index0 = g_indices[v_primId*3];
 	uint index1 = g_indices[v_primId*3+1];
 	uint index2 = g_indices[v_primId*3+2];
@@ -26,4 +31,5 @@ void main()
 	
 	fragColor0.rgb = mix(vec3(b0, b1, b2), outBaseColor.rgb, 0.5);
 	fragColor0.a = 1;
+	*/
 }

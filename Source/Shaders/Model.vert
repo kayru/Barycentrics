@@ -4,6 +4,7 @@
 
 layout (location = 0) out vec2 v_barycentrics;
 layout (location = 1) out uint v_primId;
+layout (location = 2) out vec3 v_viewVector;
 
 void main()
 {
@@ -22,4 +23,5 @@ void main()
 	}
 
 	v_primId = gl_VertexIndex / 3;
+	v_viewVector = worldPos - g_cameraPos.xyz;
 }

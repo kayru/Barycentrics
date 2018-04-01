@@ -4,11 +4,12 @@ set(shaderDependencies
 )
 
 set(shaders
-	Shaders/Model.vert
 	Shaders/Model.frag
-	Shaders/ModelIndexed.vert
-	Shaders/ModelIndexed.frag
+	Shaders/Model.vert
 	Shaders/ModelBarycentrics.geom
+	Shaders/ModelIndexed.frag
+	Shaders/ModelIndexed.vert
+	Shaders/ModelManual.frag
 )
 
 set(src

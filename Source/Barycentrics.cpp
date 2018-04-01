@@ -49,6 +49,13 @@ BarycentricsApp::BarycentricsApp()
 	bindings.addStorageBuffer("vertexBuffer", 3);
 	bindings.addStorageBuffer("indexBuffer", 4);
 
+	GfxVertexFormatDesc vfDefaultDesc; // TODO: use de-interleaved vertex streams and packed vertices
+	vfDefaultDesc.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Position, 0);
+	vfDefaultDesc.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Normal, 0);
+	vfDefaultDesc.add(0, GfxVertexFormatDesc::DataType::Float2, GfxVertexFormatDesc::Semantic::Texcoord, 0);
+
+	GfxVertexFormatDesc vfEmptyDesc;
+
 	{
 		GfxVertexShaderRef vs;
 		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/Model.vert.spv")));
@@ -56,9 +63,8 @@ BarycentricsApp::BarycentricsApp()
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/Model.frag.spv")));
 
-		GfxVertexFormatDesc vfDescr;
 		GfxVertexFormatRef vf;
-		vf.takeover(Gfx_CreateVertexFormat(vfDescr));
+		vf.takeover(Gfx_CreateVertexFormat(vfEmptyDesc));
 
 		m_techniqueNonIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
 	}
@@ -73,13 +79,8 @@ BarycentricsApp::BarycentricsApp()
 		GfxGeometryShaderRef gs;
 		gs.takeover(Gfx_CreateGeometryShader(shaderFromFile("Shaders/ModelBarycentrics.geom.spv")));
 
-		GfxVertexFormatDesc vfDescr; // TODO: use de-interleaved vertex streams and packed vertices
-		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Position, 0);
-		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Normal, 0);
-		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float2, GfxVertexFormatDesc::Semantic::Texcoord, 0);
-
 		GfxVertexFormatRef vf;
-		vf.takeover(Gfx_CreateVertexFormat(vfDescr));
+		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
 		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
 		techniqueDesc.gs = gs.get();
@@ -94,15 +95,23 @@ BarycentricsApp::BarycentricsApp()
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelIndexed.frag.spv")));
 
-		GfxVertexFormatDesc vfDescr; // TODO: use de-interleaved vertex streams and packed vertices
-		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Position, 0);
-		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Normal, 0);
-		vfDescr.add(0, GfxVertexFormatDesc::DataType::Float2, GfxVertexFormatDesc::Semantic::Texcoord, 0);
-
 		GfxVertexFormatRef vf;
-		vf.takeover(Gfx_CreateVertexFormat(vfDescr));
+		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
 		m_techniqueIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+	}
+
+	{
+		GfxVertexShaderRef vs;
+		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
+
+		GfxPixelShaderRef ps;
+		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelManual.frag.spv")));
+
+		GfxVertexFormatRef vf;
+		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
+
+		m_techniqueManual = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
 	}
 
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
@@ -116,10 +125,10 @@ BarycentricsApp::BarycentricsApp()
 
 		Vec3 center = m_boundingBox.center();
 		Vec3 dimensions = m_boundingBox.dimensions();
-		float longest_side = dimensions.reduceMax();
-		if (longest_side != 0)
+		float longestSide = dimensions.reduceMax();
+		if (longestSide != 0)
 		{
-			float scale = 100.0f / longest_side;
+			float scale = 100.0f / longestSide;
 			m_worldTransform = Mat4::scaleTranslate(scale, -center*scale);
 		}
 
@@ -194,6 +203,10 @@ void BarycentricsApp::update()
 			{
 				m_mode = Mode::GeometryShader;
 			}
+			else if (e.code == Key_4)
+			{
+				m_mode = Mode::Manual;
+			}
 			break;
 		}
 		default:
@@ -260,6 +273,11 @@ void BarycentricsApp::render()
 		case Mode::GeometryShader:
 			Gfx_SetTechnique(m_ctx, m_techniqueGeometryShader);
 			break;
+		case Mode::Manual:
+			Gfx_SetTechnique(m_ctx, m_techniqueManual);
+			break;
+		default:
+			RUSH_LOG_ERROR("Rendering mode '%s' not implemented", toString(m_mode));
 		}
 
 		if (m_mode != Mode::NonIndexed)
