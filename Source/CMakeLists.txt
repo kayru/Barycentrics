@@ -10,8 +10,9 @@ set(shaders
 	Shaders/ModelIndexed.frag
 	Shaders/ModelIndexed.vert
 	Shaders/ModelManual.frag
-	Shaders/ModelNativeAMD.vert
+	Shaders/ModelManual.vert
 	Shaders/ModelNativeAMD.frag
+	Shaders/ModelNativeAMD.vert
 	Shaders/ModelPassthrough.frag
 	Shaders/ModelPassthrough.geom
 	Shaders/ModelPassthrough.vert

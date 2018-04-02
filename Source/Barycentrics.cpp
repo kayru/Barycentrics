@@ -99,13 +99,16 @@ BarycentricsApp::BarycentricsApp()
 	}
 
 	{
+		GfxVertexShaderRef vs;
+		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelManual.vert.spv")));
+
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelManual.frag.spv")));
 
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		m_techniqueManual = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings));
+		m_techniqueManual = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
 	}
 
 	if (Gfx_GetCapability().geometryShaderPassthroughNV)
