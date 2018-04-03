@@ -6,5 +6,6 @@ else()
 	add_compile_options(-w)
 endif()
 
+add_subdirectory("meshoptimizer")
 add_subdirectory("stb")
 add_subdirectory("tiny_obj_loader")

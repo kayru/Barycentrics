@@ -10,6 +10,8 @@
 #include <tiny_obj_loader.h>
 #pragma warning(pop)
 
+#include <meshoptimizer.h>
+
 #include <algorithm>
 
 AppConfig g_appConfig;
@@ -336,28 +338,16 @@ void BarycentricsApp::render()
 		Gfx_SetStorageBuffer(m_ctx, 0, m_vertexBuffer);
 		Gfx_SetStorageBuffer(m_ctx, 1, m_indexBuffer);
 
-		for (const MeshSegment& segment : m_segments)
+		Gfx_SetConstantBuffer(m_ctx, 1, m_defaultMaterial.constantBuffer);
+		Gfx_SetTexture(m_ctx, GfxStage::Pixel, 0, m_defaultMaterial.albedoTexture, m_samplerStates.linearWrap);
+
+		if (m_mode == Mode::NonIndexed)
 		{
-			GfxTexture texture = m_defaultWhiteTexture;
-
-			const Material& material = (segment.material == 0xFFFFFFFF) ? m_defaultMaterial : m_materials[segment.material];
-			if (material.albedoTexture.valid())
-			{
-				texture = material.albedoTexture.get();
-			}
-
-			Gfx_SetConstantBuffer(m_ctx, 1, material.constantBuffer);
-
-			Gfx_SetTexture(m_ctx, GfxStage::Pixel, 0, texture, m_samplerStates.anisotropicWrap);
-
-			if (m_mode == Mode::NonIndexed)
-			{
-				Gfx_Draw(m_ctx, segment.indexOffset, segment.indexCount);
-			}
-			else
-			{
-				Gfx_DrawIndexed(m_ctx, segment.indexCount, segment.indexOffset, 0, m_vertexCount);
-			}
+			Gfx_Draw(m_ctx, 0, m_indexCount);
+		}
+		else
+		{
+			Gfx_DrawIndexed(m_ctx, m_indexCount, 0, 0, m_vertexCount);
 		}
 	}
 
@@ -413,26 +403,6 @@ void BarycentricsApp::render()
 	Gfx_EndPass(m_ctx);
 }
 
-GfxRef<GfxTexture> BarycentricsApp::loadTexture(const std::string& filename)
-{
-	auto it = m_textures.find(filename);
-	if (it == m_textures.end())
-	{
-		Log::message("Loading texture '%s'", filename.c_str());
-
-		GfxRef<GfxTexture> texture;
-		texture.takeover(textureFromFile(filename.c_str()));
-
-		m_textures.insert(std::make_pair(filename, texture));
-
-		return texture;
-	}
-	else
-	{
-		return it->second;
-	}
-}
-
 bool BarycentricsApp::loadModel(const char* filename)
 {
 	Log::message("Loading model '%s'", filename);
@@ -450,40 +420,8 @@ bool BarycentricsApp::loadModel(const char* filename)
 		return false;
 	}
 
-	const GfxBufferDesc materialCbDesc(GfxBufferFlags::Constant, GfxFormat_Unknown, 1, sizeof(MaterialConstants));
-	for (auto& objMaterial : materials)
 	{
-		MaterialConstants constants;
-		constants.baseColor.x = objMaterial.diffuse[0];
-		constants.baseColor.y = objMaterial.diffuse[1];
-		constants.baseColor.z = objMaterial.diffuse[2];
-		constants.baseColor.w = 1.0f;
-
-		Material material;
-		if (!objMaterial.diffuse_texname.empty())
-		{
-			material.albedoTexture = loadTexture(directory + objMaterial.diffuse_texname);
-		}
-
-		{
-			u64 constantHash = hashFnv1a64(&constants, sizeof(constants));
-			auto it = m_materialConstantBuffers.find(constantHash);
-			if (it == m_materialConstantBuffers.end())
-			{
-				GfxBuffer cb = Gfx_CreateBuffer(materialCbDesc, &constants);
-				m_materialConstantBuffers[constantHash].retain(cb);
-				material.constantBuffer.retain(cb);
-			}
-			else
-			{
-				material.constantBuffer = it->second;
-			}
-		}
-
-		m_materials.push_back(material);
-	}
-
-	{
+		const GfxBufferDesc materialCbDesc(GfxBufferFlags::Constant, GfxFormat_Unknown, 1, sizeof(MaterialConstants));
 		MaterialConstants constants;
 		constants.baseColor = Vec4(1.0f);
 		m_defaultMaterial.constantBuffer.takeover(Gfx_CreateBuffer(materialCbDesc, &constants));
@@ -570,30 +508,19 @@ bool BarycentricsApp::loadModel(const char* filename)
 			}
 		}
 
-		u32 currentMaterialId = 0xFFFFFFFF;
-
 		const u32 triangleCount = (u32)mesh.indices.size() / 3;
 		for (u32 triangleIt = 0; triangleIt < triangleCount; ++triangleIt)
 		{
-			if (mesh.material_ids[triangleIt] != currentMaterialId || m_segments.empty())
-			{
-				currentMaterialId = mesh.material_ids[triangleIt];
-				m_segments.push_back(MeshSegment());
-				m_segments.back().material = currentMaterialId;
-				m_segments.back().indexOffset = (u32)indices.size();
-				m_segments.back().indexCount = 0;
-			}
-
 			indices.push_back(mesh.indices[triangleIt * 3 + 0] + firstVertex);
 			indices.push_back(mesh.indices[triangleIt * 3 + 2] + firstVertex);
 			indices.push_back(mesh.indices[triangleIt * 3 + 1] + firstVertex);
-
-			m_segments.back().indexCount += 3;
 		}
 	}
 
 	m_vertexCount = (u32)vertices.size();
 	m_indexCount = (u32)indices.size();
+
+	meshopt_optimizeVertexCache<u32>(indices.data(), indices.data(), m_indexCount, m_vertexCount);
 
 	GfxBufferDesc vbDesc(GfxBufferFlags::Vertex | GfxBufferFlags::Storage, GfxFormat_Unknown, m_vertexCount, sizeof(Vertex));
 	m_vertexBuffer = Gfx_CreateBuffer(vbDesc, vertices.data());

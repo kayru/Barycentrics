@@ -33,7 +33,6 @@ private:
 	void render();
 
 	bool loadModel(const char* filename);
-	GfxRef<GfxTexture> loadTexture(const std::string& filename);
 
 	Camera m_camera;
 	Camera m_interpolatedCamera;
@@ -77,9 +76,6 @@ private:
 	std::string m_statusString;
 	bool m_valid = false;
 
-	std::unordered_map<std::string, GfxRef<GfxTexture>> m_textures;
-	std::unordered_map<u64, GfxRef<GfxBuffer>> m_materialConstantBuffers;
-
 	struct MaterialConstants
 	{
 		Vec4 baseColor;
@@ -91,17 +87,7 @@ private:
 		GfxBufferRef constantBuffer;
 	};
 
-	std::vector<Material> m_materials;
 	Material m_defaultMaterial;
-
-	struct MeshSegment
-	{
-		u32 material = 0;
-		u32 indexOffset = 0;
-		u32 indexCount = 0;
-	};
-
-	std::vector<MeshSegment> m_segments;
 
 	WindowEventListener m_windowEvents;
 

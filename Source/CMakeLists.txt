@@ -54,6 +54,7 @@ target_compile_definitions(${app} PRIVATE
 )
 
 target_link_libraries(${app}
+	meshoptimizer
 	Rush
 	stb
 	tiny_obj_loader
