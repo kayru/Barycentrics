@@ -33,12 +33,14 @@ private:
 	void render();
 
 	bool loadModel(const char* filename);
+	bool loadTunnelTestModel();
 
 	Camera m_camera;
 	Camera m_interpolatedCamera;
 
 	CameraManipulator* m_cameraMan;
 
+	GfxTechnique m_techniqueTextured;
 	GfxTechnique m_techniqueNonIndexed;
 	GfxTechnique m_techniqueGeometryShader;
 	GfxTechnique m_techniqueIndexed;
@@ -120,6 +122,7 @@ private:
 		Manual,
 		PassthroughGS,
 		NativeAMD,
+		Textured,
 	} m_mode = Mode::NonIndexed;
 
 	const char* toString(Mode m)
@@ -133,6 +136,7 @@ private:
 		case Mode::Manual: return "Manual";
 		case Mode::PassthroughGS: return "PassthroughGS";
 		case Mode::NativeAMD: return "NativeAMD";
+		case Mode::Textured: return "Textured";
 		}
 	}
 };

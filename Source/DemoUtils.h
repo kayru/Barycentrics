@@ -54,3 +54,4 @@ inline u64 hashFnv1a64(const void* message, size_t length, u64 state = 0xcbf29ce
 std::string directoryFromFilename(const std::string& filename);
 GfxShaderSource shaderFromFile(const char* filename, const char* shaderDirectory = Platform_GetExecutableDirectory());
 GfxTexture textureFromFile(const char* filename);
+GfxTexture generateMipsRGBA8(u8* pixels, int w, int h);

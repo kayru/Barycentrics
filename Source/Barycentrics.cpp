@@ -13,6 +13,7 @@
 #include <meshoptimizer.h>
 
 #include <algorithm>
+#include <cmath>
 
 AppConfig g_appConfig;
 
@@ -101,6 +102,16 @@ BarycentricsApp::BarycentricsApp()
 	}
 
 	{
+		GfxPixelShaderRef ps;
+		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelTextured.frag.spv")));
+
+		GfxVertexFormatRef vf;
+		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
+
+		m_techniqueTextured = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings));
+	}
+
+	{
 		GfxVertexShaderRef vs;
 		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelManual.vert.spv")));
 
@@ -150,6 +161,12 @@ BarycentricsApp::BarycentricsApp()
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
 	m_constantBuffer = Gfx_CreateBuffer(cbDescr);
 
+	float aspect = m_window->getAspect();
+	float fov = 1.0f;
+
+	m_camera = Camera(aspect, fov, 0.25f, 10000.0f);
+	m_camera.lookAt(Vec3(m_boundingBox.m_max) + Vec3(2.0f), m_boundingBox.center());
+
 	if (g_appConfig.argc >= 2)
 	{
 		const char* modelFilename = g_appConfig.argv[1];
@@ -170,14 +187,15 @@ BarycentricsApp::BarycentricsApp()
 	}
 	else
 	{
-		m_statusString = "Usage: BarycentricsApp <filename.obj>";
+		// Default tunnel test model
+		m_valid = loadTunnelTestModel();
+
+		Vec3 position = m_boundingBox.center();
+		position.z = m_boundingBox.m_min.z;
+		m_camera.lookAt(position, m_boundingBox.center());
 	}
 
-	float aspect = m_window->getAspect();
-	float fov = 1.0f;
-
-	m_camera = Camera(aspect, fov, 0.25f, 10000.0f);
-	m_camera.lookAt(Vec3(m_boundingBox.m_max) + Vec3(2.0f), m_boundingBox.center());
+	
 	m_interpolatedCamera = m_camera;
 
 	m_cameraMan = new CameraManipulator();
@@ -247,6 +265,10 @@ void BarycentricsApp::update()
 			else if (e.code == Key_5 && m_techniqueNativeAMD.valid())
 			{
 				m_mode = Mode::NativeAMD;
+			}
+			else if (e.code == Key_6)
+			{
+				m_mode = Mode::Textured;
 			}
 			break;
 		}
@@ -323,6 +345,9 @@ void BarycentricsApp::render()
 		case Mode::NativeAMD:
 			Gfx_SetTechnique(m_ctx, m_techniqueNativeAMD);
 			break;
+		case Mode::Textured:
+			Gfx_SetTechnique(m_ctx, m_techniqueTextured);
+			break;
 		default:
 			RUSH_LOG_ERROR("Rendering mode '%s' not implemented", toString(m_mode));
 		}
@@ -339,7 +364,7 @@ void BarycentricsApp::render()
 		Gfx_SetStorageBuffer(m_ctx, 1, m_indexBuffer);
 
 		Gfx_SetConstantBuffer(m_ctx, 1, m_defaultMaterial.constantBuffer);
-		Gfx_SetTexture(m_ctx, GfxStage::Pixel, 0, m_defaultMaterial.albedoTexture, m_samplerStates.linearWrap);
+		Gfx_SetTexture(m_ctx, GfxStage::Pixel, 0, m_defaultMaterial.albedoTexture, m_samplerStates.anisotropicWrap);
 
 		if (m_mode == Mode::NonIndexed)
 		{
@@ -521,6 +546,91 @@ bool BarycentricsApp::loadModel(const char* filename)
 	m_indexCount = (u32)indices.size();
 
 	meshopt_optimizeVertexCache<u32>(indices.data(), indices.data(), m_indexCount, m_vertexCount);
+
+	GfxBufferDesc vbDesc(GfxBufferFlags::Vertex | GfxBufferFlags::Storage, GfxFormat_Unknown, m_vertexCount, sizeof(Vertex));
+	m_vertexBuffer = Gfx_CreateBuffer(vbDesc, vertices.data());
+
+	GfxBufferDesc ibDesc(GfxBufferFlags::Index | GfxBufferFlags::Storage, GfxFormat_R32_Uint, m_indexCount, 4);
+	m_indexBuffer = Gfx_CreateBuffer(ibDesc, indices.data());
+
+	return true;
+}
+
+
+bool BarycentricsApp::loadTunnelTestModel()
+{
+	Log::message("Creating tunnel test model");
+
+	{
+		const GfxBufferDesc materialCbDesc(GfxBufferFlags::Constant, GfxFormat_Unknown, 1, sizeof(MaterialConstants));
+		MaterialConstants constants;
+		constants.baseColor = Vec4(1.0f);
+		m_defaultMaterial.constantBuffer.takeover(Gfx_CreateBuffer(materialCbDesc, &constants));
+		m_defaultMaterial.albedoTexture.retain(m_checkerboardTexture);
+	}
+
+	std::vector<Vertex> vertices;
+	std::vector<u32> indices;
+
+	m_boundingBox.expandInit();
+
+	const float near = 0.0f;
+	const float far = 100.0f;
+	const float radius = 1.0f;
+	const float uscale = 10.0f;
+
+	const u32 circleVertexCount = 50;
+
+	// Last vertices have unique tex coords so need them
+	for (u32 i = 0; i <= circleVertexCount; ++i)
+	{
+		float n = static_cast<float>(i) / static_cast<float>(circleVertexCount);
+
+		Vertex v;
+		v.position.x = radius * std::sin(Rush::TwoPi * n);
+		v.position.y = radius * std::cos(Rush::TwoPi * n);
+		v.texcoord.x = n * uscale;
+		
+		// TODO
+		v.normal.x = 0;
+		v.normal.y = 0;
+		v.normal.z = 0;
+
+		// Near vertex
+		v.position.z = near;
+		v.texcoord.y = near;
+		m_boundingBox.expand(v.position);
+		vertices.push_back(v);
+
+		// Far vertex
+		v.position.z = far;
+		v.texcoord.y = far;
+		m_boundingBox.expand(v.position);
+		vertices.push_back(v);
+	}
+
+	m_vertexCount = (u32)vertices.size();
+	
+	// One quad (connecting near/far pair of vertices) per segment
+	for (u32 i = 0; i < circleVertexCount; ++i)
+	{
+		int i0 = (2*i + 0);
+		int i1 = (2*i + 1);
+		int i2 = (2*i + 2);
+		int i3 = (2*i + 3);
+
+		indices.push_back(i0);
+		indices.push_back(i1);
+		indices.push_back(i2);
+
+		indices.push_back(i2);
+		indices.push_back(i1);
+		indices.push_back(i3);
+	}
+		
+	m_indexCount = (u32)indices.size();
+
+	//meshopt_optimizeVertexCache<u32>(indices.data(), indices.data(), m_indexCount, m_vertexCount);
 
 	GfxBufferDesc vbDesc(GfxBufferFlags::Vertex | GfxBufferFlags::Storage, GfxFormat_Unknown, m_vertexCount, sizeof(Vertex));
 	m_vertexBuffer = Gfx_CreateBuffer(vbDesc, vertices.data());

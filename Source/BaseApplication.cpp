@@ -1,4 +1,5 @@
 #include "BaseApplication.h"
+#include "DemoUtils.h"
 
 #include <Rush/GfxBitmapFont.h>
 #include <Rush/GfxPrimitiveBatch.h>
@@ -96,7 +97,7 @@ BaseApplication::BaseApplication()
 		desc.wrapU          = GfxTextureWrap::Wrap;
 		desc.wrapV          = GfxTextureWrap::Wrap;
 		desc.wrapW          = GfxTextureWrap::Wrap;
-		desc.anisotropy     = 4.0f;
+		desc.anisotropy     = 16.0f;
 		m_samplerStates.anisotropicWrap.takeover(Gfx_CreateSamplerState(desc));
 	}
 
@@ -106,6 +107,23 @@ BaseApplication::BaseApplication()
 		const u32 whiteTexturePixels[4] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
 		GfxTextureDesc textureDescr = GfxTextureDesc::make2D(2, 2);
 		m_defaultWhiteTexture = Gfx_CreateTexture(textureDescr, whiteTexturePixels);
+	}
+
+	{
+		const u32 dimension = 256;
+		const u32 square = dimension / 2;
+
+		std::vector<u32> pixels(dimension * dimension, 0x00000000);
+		for (u32 y = 0; y < square; ++y)
+		{
+			for (u32 x = 0; x < square; ++x)
+			{
+				pixels[y * dimension + x] = 0xFFFFFFFF;
+				pixels[(y + square) * dimension + (x + square)] = 0xFFFFFFFF;
+			}
+		}
+
+		m_checkerboardTexture = generateMipsRGBA8(reinterpret_cast<u8*>(pixels.data()), dimension, dimension);
 	}
 }
 

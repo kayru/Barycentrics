@@ -64,3 +64,21 @@ vec3 intersectRayTri(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v
 
 	return vec3(1.0 - b1 - b2, b1, b2);
 }
+
+vec2 interpolateTexCoords(uint primId, vec3 barycentrics)
+{
+	uint index0 = g_indices[3*primId+0];
+	uint index1 = g_indices[3*primId+1];
+	uint index2 = g_indices[3*primId+2];
+
+	Vertex vertex0 = getVertex(index0);
+	Vertex vertex1 = getVertex(index1);
+	Vertex vertex2 = getVertex(index2);
+
+	vec2 texcoord = 
+		vertex0.texcoord * barycentrics.x +
+		vertex1.texcoord * barycentrics.y +
+		vertex2.texcoord * barycentrics.z;
+
+	return texcoord;
+}

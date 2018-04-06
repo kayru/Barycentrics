@@ -16,6 +16,7 @@ set(shaders
 	Shaders/ModelPassthrough.frag
 	Shaders/ModelPassthrough.geom
 	Shaders/ModelPassthrough.vert
+	Shaders/ModelTextured.frag
 )
 
 set(src

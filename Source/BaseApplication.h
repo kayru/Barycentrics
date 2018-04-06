@@ -51,4 +51,5 @@ protected:
 	BitmapFontRenderer* m_font;
 
 	GfxTexture m_defaultWhiteTexture;
+	GfxTexture m_checkerboardTexture;
 };

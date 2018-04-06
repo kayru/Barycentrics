@@ -12,19 +12,20 @@ layout (location = 2) out vec3 v_viewVector;
 
 void main()
 {
-	v_primId = gl_PrimitiveID;
-
 	gl_Position = gl_in[0].gl_Position;
+	v_primId = gl_PrimitiveIDIn;
 	v_viewVector = v_viewVectorIn[0];
 	v_barycentrics = vec2(1,0);
 	EmitVertex();
 
 	gl_Position = gl_in[1].gl_Position;
+	v_primId = gl_PrimitiveIDIn;
 	v_viewVector = v_viewVectorIn[1];
 	v_barycentrics = vec2(0,1);
 	EmitVertex();
 
 	gl_Position = gl_in[2].gl_Position;
+	v_primId = gl_PrimitiveIDIn;
 	v_viewVector = v_viewVectorIn[2];
 	v_barycentrics = vec2(0,0);
 	EmitVertex();
