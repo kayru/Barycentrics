@@ -1,3 +1,5 @@
+layout(constant_id = 0) const bool g_useTexture = false;
+
 layout (binding = 0) uniform Global
 {
 	mat4 g_matView;
@@ -62,6 +64,16 @@ vec3 intersectRayTri(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v
 	return vec3(1.0 - b1 - b2, b1, b2);
 }
 
+vec2 interpolateTexCoords(vec2 t0, vec2 t1, vec2 t2, vec3 barycentrics)
+{
+	vec2 texcoord = 
+		t0 * barycentrics.x +
+		t1 * barycentrics.y +
+		t2 * barycentrics.z;
+
+	return texcoord;
+}
+
 vec2 interpolateTexCoords(uint primId, vec3 barycentrics)
 {
 	uint index0 = g_indices[3*primId+0];
@@ -72,10 +84,9 @@ vec2 interpolateTexCoords(uint primId, vec3 barycentrics)
 	Vertex vertex1 = getVertex(index1);
 	Vertex vertex2 = getVertex(index2);
 
-	vec2 texcoord = 
-		vertex0.texcoord * barycentrics.x +
-		vertex1.texcoord * barycentrics.y +
-		vertex2.texcoord * barycentrics.z;
-
-	return texcoord;
+	return interpolateTexCoords(
+		vertex0.texcoord,
+		vertex1.texcoord,
+		vertex2.texcoord,
+		barycentrics);
 }

@@ -40,13 +40,12 @@ private:
 
 	CameraManipulator* m_cameraMan;
 
-	GfxTechnique m_techniqueTextured;
-	GfxTechnique m_techniqueNonIndexed;
-	GfxTechnique m_techniqueGeometryShader;
-	GfxTechnique m_techniqueIndexed;
-	GfxTechnique m_techniqueManual;
-	GfxTechnique m_techniquePassthroughGS;
-	GfxTechnique m_techniqueNativeAMD;
+	GfxTechniqueRef m_techniqueNonIndexed[2];
+	GfxTechniqueRef m_techniqueGeometryShader[2];
+	GfxTechniqueRef m_techniqueIndexed[2];
+	GfxTechniqueRef m_techniqueManual[2];
+	GfxTechniqueRef m_techniquePassthroughGS[2];
+	GfxTechniqueRef m_techniqueNativeAMD[2];
 
 	GfxBuffer m_vertexBuffer;
 	GfxBuffer m_indexBuffer;
@@ -121,7 +120,6 @@ private:
 		Manual,
 		PassthroughGS,
 		NativeAMD,
-		Textured,
 	} m_mode = Mode::NonIndexed;
 
 	const char* toString(Mode m)
@@ -135,8 +133,10 @@ private:
 		case Mode::Manual: return "Manual";
 		case Mode::PassthroughGS: return "PassthroughGS";
 		case Mode::NativeAMD: return "NativeAMD";
-		case Mode::Textured: return "Textured";
 		}
 	}
+
+	bool m_useTexture = false;
+	bool m_showUI = true;
 };
 

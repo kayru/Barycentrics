@@ -12,10 +12,15 @@ void main()
 {
 	vec3 barycentrics = vec3(v_barycentrics.x, v_barycentrics.y, 1.0 - v_barycentrics.x - v_barycentrics.y);
 
-	vec2 texcoords = interpolateTexCoords(v_primId, barycentrics);	
-	vec3 textured = texture(albedoSampler, texcoords).rgb;
+	if (g_useTexture)
+	{
+		vec2 texcoords = interpolateTexCoords(v_primId, barycentrics);
+		fragColor0.rgb = texture(albedoSampler, texcoords).rgb;
+	}
+	else
+	{
+		fragColor0.rgb = barycentrics;
+	}
 
-	fragColor0.rgb = barycentrics;
-	//fragColor0.rgb = textured;
 	fragColor0.a = 1;
 }

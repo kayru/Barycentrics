@@ -9,11 +9,14 @@ layout (location = 0) out vec4 fragColor0;
 
 void main()
 {
-	/*
-	vec3 baseColor = g_baseColor.rgb * texture(albedoSampler, v_tex0).rgb;
-	fragColor0.rgb = baseColor.rgb;
-	*/
+	if (g_useTexture)
+	{
+		fragColor0.rgb = texture(albedoSampler, v_tex0).rgb;
+	}
+	else
+	{
+		fragColor0.rgb = vec3(v_tex0, 0.0);
+	}
 
-	fragColor0.rgb = vec3(v_tex0, 0.0);
 	fragColor0.a = 1;
 }

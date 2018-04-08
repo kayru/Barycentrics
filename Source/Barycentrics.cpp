@@ -61,6 +61,23 @@ BarycentricsApp::BarycentricsApp()
 	GfxVertexShaderRef vsIndexed;
 	vsIndexed.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/ModelIndexed.vert.spv")));
 
+	struct SpecializationData { u32 useTexture; };
+	GfxSpecializationConstant specializationConstantLayout;
+	specializationConstantLayout.id = 0;
+	specializationConstantLayout.offset = 0;
+	specializationConstantLayout.size = sizeof(SpecializationData);
+
+	enum { specializationCount = 2 };
+	SpecializationData specializationData[specializationCount] = { 0, 1 }; // non-textured and textured variants
+
+	auto setupSpecialization = [&](GfxTechniqueDesc& techniqueDesc, u32 variantIndex)
+	{
+		techniqueDesc.specializationConstants = &specializationConstantLayout;
+		techniqueDesc.specializationConstantCount = 1;
+		techniqueDesc.specializationData = &specializationData[variantIndex];
+		techniqueDesc.specializationDataSize = sizeof(SpecializationData);
+	};
+
 	{
 		GfxVertexShaderRef vs;
 		vs.takeover(Gfx_CreateVertexShader(shaderFromFile("Shaders/Model.vert.spv")));
@@ -71,7 +88,13 @@ BarycentricsApp::BarycentricsApp()
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfEmptyDesc));
 
-		m_techniqueNonIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+
+		for (u32 i=0; i<specializationCount; ++i)
+		{
+			setupSpecialization(techniqueDesc, i);
+			m_techniqueNonIndexed[i].takeover(Gfx_CreateTechnique(techniqueDesc));
+		}
 	}
 
 	{
@@ -87,7 +110,11 @@ BarycentricsApp::BarycentricsApp()
 		GfxTechniqueDesc techniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings);
 		techniqueDesc.gs = gs.get();
 
-		m_techniqueGeometryShader = Gfx_CreateTechnique(techniqueDesc);
+		for (u32 i = 0; i < specializationCount; ++i)
+		{
+			setupSpecialization(techniqueDesc, i);
+			m_techniqueGeometryShader[i].takeover(Gfx_CreateTechnique(techniqueDesc));
+		}
 	}
 
 	{
@@ -97,17 +124,13 @@ BarycentricsApp::BarycentricsApp()
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		m_techniqueIndexed = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings));
-	}
+		GfxTechniqueDesc techniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings);
 
-	{
-		GfxPixelShaderRef ps;
-		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelTextured.frag.spv")));
-
-		GfxVertexFormatRef vf;
-		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
-
-		m_techniqueTextured = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vsIndexed.get(), vf.get(), &bindings));
+		for (u32 i = 0; i < specializationCount; ++i)
+		{
+			setupSpecialization(techniqueDesc, i);
+			m_techniqueIndexed[i].takeover(Gfx_CreateTechnique(techniqueDesc));
+		}
 	}
 
 	{
@@ -120,7 +143,13 @@ BarycentricsApp::BarycentricsApp()
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		m_techniqueManual = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+
+		for (u32 i = 0; i < specializationCount; ++i)
+		{
+			setupSpecialization(techniqueDesc, i);
+			m_techniqueManual[i].takeover(Gfx_CreateTechnique(techniqueDesc));
+		}
 	}
 
 	if (Gfx_GetCapability().geometryShaderPassthroughNV)
@@ -140,7 +169,11 @@ BarycentricsApp::BarycentricsApp()
 		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
 		techniqueDesc.gs = gs.get();
 
-		m_techniquePassthroughGS = Gfx_CreateTechnique(techniqueDesc);
+		for (u32 i = 0; i < specializationCount; ++i)
+		{
+			setupSpecialization(techniqueDesc, i);
+			m_techniquePassthroughGS[i].takeover(Gfx_CreateTechnique(techniqueDesc));
+		}
 	}
 
 	if (Gfx_GetCapability().explicitVertexParameterAMD)
@@ -154,7 +187,13 @@ BarycentricsApp::BarycentricsApp()
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		m_techniqueNativeAMD = Gfx_CreateTechnique(GfxTechniqueDesc(ps.get(), vs.get(), vf.get(), &bindings));
+		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+
+		for (u32 i = 0; i < specializationCount; ++i)
+		{
+			setupSpecialization(techniqueDesc, i);
+			m_techniqueNativeAMD[i].takeover(Gfx_CreateTechnique(techniqueDesc));
+		}
 	}
 
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
@@ -164,7 +203,6 @@ BarycentricsApp::BarycentricsApp()
 	float fov = 1.0f;
 
 	m_camera = Camera(aspect, fov, 0.25f, 10000.0f);
-	m_camera.lookAt(Vec3(m_boundingBox.m_max) + Vec3(2.0f), m_boundingBox.center());
 
 	if (g_appConfig.argc >= 2)
 	{
@@ -183,6 +221,8 @@ BarycentricsApp::BarycentricsApp()
 
 		m_boundingBox.m_min = m_worldTransform * m_boundingBox.m_min;
 		m_boundingBox.m_max = m_worldTransform * m_boundingBox.m_max;
+
+		m_camera.lookAt(Vec3(m_boundingBox.m_max) + Vec3(2.0f), m_boundingBox.center());
 	}
 	else
 	{
@@ -194,7 +234,6 @@ BarycentricsApp::BarycentricsApp()
 		m_camera.lookAt(position, m_boundingBox.center());
 	}
 
-	
 	m_interpolatedCamera = m_camera;
 
 	m_cameraMan = new CameraManipulator();
@@ -257,17 +296,21 @@ void BarycentricsApp::update()
 			{
 				m_mode = Mode::Manual;
 			}
-			else if (e.code == Key_4 && m_techniquePassthroughGS.valid())
+			else if (e.code == Key_4 && m_techniquePassthroughGS[m_useTexture].valid())
 			{
 				m_mode = Mode::PassthroughGS;
 			}
-			else if (e.code == Key_5 && m_techniqueNativeAMD.valid())
+			else if (e.code == Key_5 && m_techniqueNativeAMD[m_useTexture].valid())
 			{
 				m_mode = Mode::NativeAMD;
 			}
-			else if (e.code == Key_6)
+			else if (e.code == Key_T)
 			{
-				m_mode = Mode::Textured;
+				m_useTexture = !m_useTexture;
+			}
+			else if (e.code == Key_H)
+			{
+				m_showUI = !m_showUI;
 			}
 			break;
 		}
@@ -327,25 +370,22 @@ void BarycentricsApp::render()
 		switch (m_mode)
 		{
 		case Mode::Indexed:
-			Gfx_SetTechnique(m_ctx, m_techniqueIndexed);
+			Gfx_SetTechnique(m_ctx, m_techniqueIndexed[m_useTexture].get());
 			break;
 		case Mode::NonIndexed:
-			Gfx_SetTechnique(m_ctx, m_techniqueNonIndexed);
+			Gfx_SetTechnique(m_ctx, m_techniqueNonIndexed[m_useTexture].get());
 			break;
 		case Mode::GeometryShader:
-			Gfx_SetTechnique(m_ctx, m_techniqueGeometryShader);
+			Gfx_SetTechnique(m_ctx, m_techniqueGeometryShader[m_useTexture].get());
 			break;
 		case Mode::Manual:
-			Gfx_SetTechnique(m_ctx, m_techniqueManual);
+			Gfx_SetTechnique(m_ctx, m_techniqueManual[m_useTexture].get());
 			break;
 		case Mode::PassthroughGS:
-			Gfx_SetTechnique(m_ctx, m_techniquePassthroughGS);
+			Gfx_SetTechnique(m_ctx, m_techniquePassthroughGS[m_useTexture].get());
 			break;
 		case Mode::NativeAMD:
-			Gfx_SetTechnique(m_ctx, m_techniqueNativeAMD);
-			break;
-		case Mode::Textured:
-			Gfx_SetTechnique(m_ctx, m_techniqueTextured);
+			Gfx_SetTechnique(m_ctx, m_techniqueNativeAMD[m_useTexture].get());
 			break;
 		default:
 			RUSH_LOG_ERROR("Rendering mode '%s' not implemented", toString(m_mode));
@@ -376,8 +416,9 @@ void BarycentricsApp::render()
 	}
 
 	// Draw UI on top
+	if (m_showUI)
 	{
-		GfxTimerScope gpuTimerScopeWorld(m_ctx, Timestamp_UI);
+		GfxTimerScope gpuTimerScopeUI(m_ctx, Timestamp_UI);
 		TimingScope<double, 60> timingScope(m_stats.cpuUI);
 
 		Gfx_SetBlendState(m_ctx, m_blendStates.lerp);
@@ -402,6 +443,7 @@ void BarycentricsApp::render()
 		
 		const GfxStats& stats = Gfx_Stats();
 		sprintf_s(tempString,
+			"Textured: %d\n"
 			"Draw calls: %d\n"
 			"Vertices: %d\n"
 			"GPU total: %.2f ms\n"
@@ -410,6 +452,7 @@ void BarycentricsApp::render()
 			"CPU time: %.2f ms\n"
 			"> World: %.2f ms\n"
 			"> UI: %.2f ms",
+			int(m_useTexture),
 			stats.drawCalls,
 			stats.vertices,
 			m_stats.gpuTotal.get() * 1000.0f,
@@ -421,7 +464,15 @@ void BarycentricsApp::render()
 		pos = m_font->draw(m_prim, pos, tempString);
 		pos.x = textOrigin.x;
 
+		pos = Vec2(10, m_window->getSizeFloat().y - 30);
+		pos = m_font->draw(m_prim, pos, "Controls: keys 1-6 to change mode, 'T' to toggle texturing, 'H' to hide UI");
+
 		m_prim->end2D();
+	}
+	else
+	{
+		GfxTimerScope gpuTimerScopeUI(m_ctx, Timestamp_UI);
+		m_stats.cpuUI.add(0);
 	}
 
 	Gfx_EndPass(m_ctx);

@@ -18,6 +18,15 @@ void main()
 		v_worldPos1,
 		v_worldPos2);
 
-	fragColor0.rgb = barycentrics;
+	if (g_useTexture)
+	{
+		vec2 texcoords = interpolateTexCoords(gl_PrimitiveID, barycentrics);
+		fragColor0.rgb = texture(albedoSampler, texcoords).rgb;
+	}
+	else
+	{
+		fragColor0.rgb = barycentrics;
+	}
+
 	fragColor0.a = 1.0;
 }

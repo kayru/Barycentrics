@@ -20,11 +20,16 @@ void main()
 		v_worldPos,
 		(vec4(vertex1.position, 1) * g_matWorld).xyz,
 		(vec4(vertex2.position, 1) * g_matWorld).xyz);
-	
-	vec2 texcoords = interpolateTexCoords(gl_PrimitiveID, barycentrics);	
-	vec3 textured = texture(albedoSampler, texcoords).rgb;
 
-	fragColor0.rgb = barycentrics;
-	//fragColor0.rgb = textured;
+	if (g_useTexture)
+	{
+		vec2 texcoords = interpolateTexCoords(gl_PrimitiveID, barycentrics);
+		fragColor0.rgb = texture(albedoSampler, texcoords).rgb;
+	}
+	else
+	{
+		fragColor0.rgb = barycentrics;
+	}
+
 	fragColor0.a = 1;
 }
