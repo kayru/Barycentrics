@@ -71,8 +71,7 @@ private:
 	struct Vertex // TODO: make a packed version of this for GPU
 	{
 		Vec3 position;
-		Vec3 normal;
-		Vec2 texcoord;
+		Vec2 texcoord; // TODO: de-interleave vertex streams
 	};
 
 	std::string m_statusString;

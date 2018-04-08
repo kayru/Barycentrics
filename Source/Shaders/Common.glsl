@@ -17,7 +17,6 @@ layout (binding = 2) uniform sampler2D albedoSampler;
 struct VertexPacked
 {
 	float pX, pY, pZ;
-	float nX, nY, nZ;
 	float tX, tY;
 };
 
@@ -34,8 +33,7 @@ layout (std430, binding = 4) readonly buffer IndexBuffer
 struct Vertex
 {
 	vec3 position;
-	vec3 normal;
-	vec2 texcoord;
+	vec2 texcoord; // TODO: de-interleave vertex streams
 };
 
 Vertex getVertex(uint i)
@@ -44,7 +42,6 @@ Vertex getVertex(uint i)
 
 	Vertex r;
 	r.position = vec3(v.pX, v.pY, v.pZ);
-	r.normal = vec3(v.nX, v.nY, v.nZ);
 	r.texcoord = vec2(v.tX, v.tY);
 
 	return r;

@@ -54,7 +54,6 @@ BarycentricsApp::BarycentricsApp()
 
 	GfxVertexFormatDesc vfDefaultDesc; // TODO: use de-interleaved vertex streams and packed vertices
 	vfDefaultDesc.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Position, 0);
-	vfDefaultDesc.add(0, GfxVertexFormatDesc::DataType::Float3, GfxVertexFormatDesc::Semantic::Normal, 0);
 	vfDefaultDesc.add(0, GfxVertexFormatDesc::DataType::Float2, GfxVertexFormatDesc::Semantic::Texcoord, 0);
 
 	GfxVertexFormatDesc vfEmptyDesc;
@@ -466,7 +465,6 @@ bool BarycentricsApp::loadModel(const char* filename)
 		const u32 vertexCount = (u32)mesh.positions.size() / 3;
 
 		const bool haveTexcoords = !mesh.texcoords.empty();
-		const bool haveNormals = mesh.positions.size() == mesh.normals.size();
 
 		for (u32 i = 0; i < vertexCount; ++i)
 		{
@@ -488,49 +486,9 @@ bool BarycentricsApp::loadModel(const char* filename)
 				v.texcoord = Vec2(0.0f);
 			}
 
-			if (haveNormals)
-			{
-				v.normal.x = mesh.normals[i * 3 + 0];
-				v.normal.y = mesh.normals[i * 3 + 1];
-				v.normal.z = mesh.normals[i * 3 + 2];
-			}
-			else
-			{
-				v.normal = Vec3(0.0);
-			}
-
 			v.position.x = -v.position.x;
-			v.normal.x = -v.normal.x;
 
 			vertices.push_back(v);
-		}
-
-		if (!haveNormals)
-		{
-			const u32 triangleCount = (u32)mesh.indices.size() / 3;
-			for (u32 i = 0; i < triangleCount; ++i)
-			{
-				u32 idxA = firstVertex + mesh.indices[i * 3 + 0];
-				u32 idxB = firstVertex + mesh.indices[i * 3 + 2];
-				u32 idxC = firstVertex + mesh.indices[i * 3 + 1];
-
-				Vec3 a = vertices[idxA].position;
-				Vec3 b = vertices[idxB].position;
-				Vec3 c = vertices[idxC].position;
-
-				Vec3 normal = cross(b - a, c - b);
-
-				normal = normalize(normal);
-
-				vertices[idxA].normal += normal;
-				vertices[idxB].normal += normal;
-				vertices[idxC].normal += normal;
-			}
-
-			for (u32 i = firstVertex; i < (u32)vertices.size(); ++i)
-			{
-				vertices[i].normal = normalize(vertices[i].normal);
-			}
 		}
 
 		const u32 triangleCount = (u32)mesh.indices.size() / 3;
@@ -590,11 +548,6 @@ bool BarycentricsApp::loadTunnelTestModel()
 		v.position.x = radius * std::sin(Rush::TwoPi * n);
 		v.position.y = radius * std::cos(Rush::TwoPi * n);
 		v.texcoord.x = n * uscale;
-		
-		// TODO
-		v.normal.x = 0;
-		v.normal.y = 0;
-		v.normal.z = 0;
 
 		// Near vertex
 		v.position.z = near;
