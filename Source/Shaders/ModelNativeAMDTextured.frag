@@ -39,7 +39,8 @@ void main()
 		barycentrics = vec3(1.0);
 	}
 
-	fragColor0.rgb = barycentrics;
+	vec2 texcoords = interpolateTexCoords(gl_PrimitiveID, barycentrics);
+	fragColor0.rgb = texture(albedoSampler, texcoords).rgb;
 
 	fragColor0.a = 1.0;
 }

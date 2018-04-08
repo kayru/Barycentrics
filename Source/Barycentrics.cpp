@@ -160,6 +160,9 @@ BarycentricsApp::BarycentricsApp()
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelPassthrough.frag.spv")));
 
+		GfxPixelShaderRef psTextured;
+		psTextured.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelPassthroughTextured.frag.spv")));
+
 		GfxGeometryShaderRef gs;
 		gs.takeover(Gfx_CreateGeometryShader(shaderFromFile("Shaders/ModelPassthrough.geom.spv")));
 
@@ -169,11 +172,13 @@ BarycentricsApp::BarycentricsApp()
 		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
 		techniqueDesc.gs = gs.get();
 
-		for (u32 i = 0; i < specializationCount; ++i)
-		{
-			setupSpecialization(techniqueDesc, i);
-			m_techniquePassthroughGS[i].takeover(Gfx_CreateTechnique(techniqueDesc));
-		}
+		// Explicit precompiled textured variant is used due to gl_PrimitiveID overhead
+		// being present even when specialization constant is 'false'.
+
+		m_techniquePassthroughGS[0].takeover(Gfx_CreateTechnique(techniqueDesc));
+
+		techniqueDesc.ps = psTextured.get();
+		m_techniquePassthroughGS[1].takeover(Gfx_CreateTechnique(techniqueDesc));
 	}
 
 	if (Gfx_GetCapability().explicitVertexParameterAMD)
@@ -184,16 +189,20 @@ BarycentricsApp::BarycentricsApp()
 		GfxPixelShaderRef ps;
 		ps.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelNativeAMD.frag.spv")));
 
+		GfxPixelShaderRef psTextured;
+		psTextured.takeover(Gfx_CreatePixelShader(shaderFromFile("Shaders/ModelNativeAMDTextured.frag.spv")));
+
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
-		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+		// Explicit precompiled textured variant is used due to gl_PrimitiveID overhead
+		// being present even when specialization constant is 'false'.
 
-		for (u32 i = 0; i < specializationCount; ++i)
-		{
-			setupSpecialization(techniqueDesc, i);
-			m_techniqueNativeAMD[i].takeover(Gfx_CreateTechnique(techniqueDesc));
-		}
+		GfxTechniqueDesc techniqueDesc(ps.get(), vs.get(), vf.get(), &bindings);
+		m_techniqueNativeAMD[0].takeover(Gfx_CreateTechnique(techniqueDesc));
+
+		techniqueDesc.ps = psTextured.get();
+		m_techniqueNativeAMD[1].takeover(Gfx_CreateTechnique(techniqueDesc));
 	}
 
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));

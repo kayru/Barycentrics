@@ -13,9 +13,11 @@ set(shaders
 	Shaders/ModelManual.vert
 	Shaders/ModelNativeAMD.frag
 	Shaders/ModelNativeAMD.vert
+	Shaders/ModelNativeAMDTextured.frag
 	Shaders/ModelPassthrough.frag
 	Shaders/ModelPassthrough.geom
 	Shaders/ModelPassthrough.vert
+	Shaders/ModelPassthroughTextured.frag
 )
 
 set(src
