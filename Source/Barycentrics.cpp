@@ -208,6 +208,14 @@ BarycentricsApp::BarycentricsApp()
 	GfxBufferDesc cbDescr(GfxBufferFlags::TransientConstant, GfxFormat_Unknown, 1, sizeof(Constants));
 	m_constantBuffer = Gfx_CreateBuffer(cbDescr);
 
+	{
+		const GfxBufferDesc materialCbDesc(GfxBufferFlags::Constant, GfxFormat_Unknown, 1, sizeof(MaterialConstants));
+		MaterialConstants constants;
+		constants.baseColor = Vec4(1.0f);
+		m_defaultMaterial.constantBuffer.takeover(Gfx_CreateBuffer(materialCbDesc, &constants));
+		m_defaultMaterial.albedoTexture.retain(m_checkerboardTexture);
+	}
+
 	float aspect = m_window->getAspect();
 	float fov = 1.0f;
 
@@ -474,7 +482,7 @@ void BarycentricsApp::render()
 		pos.x = textOrigin.x;
 
 		pos = Vec2(10, m_window->getSizeFloat().y - 30);
-		pos = m_font->draw(m_prim, pos, "Controls: keys 1-6 to change mode, 'T' to toggle texturing, 'H' to hide UI");
+		pos = m_font->draw(m_prim, pos, "Controls: number keys to change modes, 'T' to toggle texturing, 'H' to hide UI");
 
 		m_prim->end2D();
 	}
@@ -502,14 +510,6 @@ bool BarycentricsApp::loadModel(const char* filename)
 	{
 		Log::error("Could not load model from '%s'\n%s\n", filename, errors.c_str());
 		return false;
-	}
-
-	{
-		const GfxBufferDesc materialCbDesc(GfxBufferFlags::Constant, GfxFormat_Unknown, 1, sizeof(MaterialConstants));
-		MaterialConstants constants;
-		constants.baseColor = Vec4(1.0f);
-		m_defaultMaterial.constantBuffer.takeover(Gfx_CreateBuffer(materialCbDesc, &constants));
-		m_defaultMaterial.albedoTexture.retain(m_defaultWhiteTexture);
 	}
 
 	std::vector<Vertex> vertices;
@@ -578,14 +578,6 @@ bool BarycentricsApp::loadModel(const char* filename)
 bool BarycentricsApp::loadTunnelTestModel()
 {
 	Log::message("Creating tunnel test model");
-
-	{
-		const GfxBufferDesc materialCbDesc(GfxBufferFlags::Constant, GfxFormat_Unknown, 1, sizeof(MaterialConstants));
-		MaterialConstants constants;
-		constants.baseColor = Vec4(1.0f);
-		m_defaultMaterial.constantBuffer.takeover(Gfx_CreateBuffer(materialCbDesc, &constants));
-		m_defaultMaterial.albedoTexture.retain(m_checkerboardTexture);
-	}
 
 	std::vector<Vertex> vertices;
 	std::vector<u32> indices;
