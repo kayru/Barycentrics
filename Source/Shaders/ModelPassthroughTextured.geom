@@ -26,6 +26,7 @@ void main()
 		out_worldPos0 = v_worldPos[0];
 		out_worldPos1 = v_worldPos[1];
 		out_worldPos2 = v_worldPos[2];
+		out_primId = gl_PrimitiveIDIn;		
 		EmitVertex();
 	}
 }
@@ -48,12 +49,14 @@ layout (location = 2) in vec3 in_worldPos[];
 layout (location = 2) out vec3 v_worldPos0;
 layout (location = 3) out vec3 v_worldPos1;
 layout (location = 4) out vec3 v_worldPos2;
+layout (location = 5) out uint v_primId;
 
 void main()
 {
 	v_worldPos0 = in_worldPos[0];
 	v_worldPos1 = in_worldPos[1];
 	v_worldPos2 = in_worldPos[2];
+	v_primId = gl_PrimitiveIDIn;
 }
 
 #endif

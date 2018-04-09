@@ -166,6 +166,9 @@ BarycentricsApp::BarycentricsApp()
 		GfxGeometryShaderRef gs;
 		gs.takeover(Gfx_CreateGeometryShader(shaderFromFile("Shaders/ModelPassthrough.geom.spv")));
 
+		GfxGeometryShaderRef gsTextured;
+		gsTextured.takeover(Gfx_CreateGeometryShader(shaderFromFile("Shaders/ModelPassthroughTextured.geom.spv")));
+
 		GfxVertexFormatRef vf;
 		vf.takeover(Gfx_CreateVertexFormat(vfDefaultDesc));
 
@@ -178,6 +181,7 @@ BarycentricsApp::BarycentricsApp()
 		m_techniquePassthroughGS[0].takeover(Gfx_CreateTechnique(techniqueDesc));
 
 		techniqueDesc.ps = psTextured.get();
+		techniqueDesc.gs = gsTextured.get();
 		m_techniquePassthroughGS[1].takeover(Gfx_CreateTechnique(techniqueDesc));
 	}
 
